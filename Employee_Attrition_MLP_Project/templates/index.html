@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Attrition Prediction</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #eef2ff, #f8fafc);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 470px;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 12px;
+            border-radius: 15px;
+            background: #4f46e5;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #111827;
+            font-size: 26px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin: 8px 0 25px;
+        }
+
+        .field {
+            margin-bottom: 17px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 7px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 15px;
+            outline: none;
+            background: white;
+        }
+
+        input:focus, select:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 5px;
+            border: none;
+            border-radius: 9px;
+            background: #4f46e5;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #4338ca;
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .result {
+            display: none;
+            margin-top: 22px;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .result.stay {
+            display: block;
+            background: #ecfdf5;
+            color: #047857;
+        }
+
+        .result.leave {
+            display: block;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .result.error {
+            display: block;
+            background: #fff7ed;
+            color: #c2410c;
+        }
+
+        .result h2 {
+            margin-bottom: 7px;
+        }
+
+        .probability {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #9ca3af;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="card">
+
+    <div class="icon">👨‍💼</div>
+
+    <h1>Employee Attrition</h1>
+
+    <p class="subtitle">
+        Prediction using MLP Neural Network
+    </p>
+
+    <form id="predictionForm">
+
+        <div class="field">
+            <label for="salary">Salary (₹)</label>
+            <input type="number" id="salary" min="1"
+                   placeholder="e.g. 35000" required>
+        </div>
+
+        <div class="field">
+            <label for="experience">Experience (Years)</label>
+            <input type="number" id="experience" min="0" step="0.1"
+                   placeholder="e.g. 3" required>
+        </div>
+
+        <div class="field">
+            <label for="satisfaction">Job Satisfaction</label>
+            <select id="satisfaction" required>
+                <option value="">Select satisfaction</option>
+                <option value="1">1 - Very Low</option>
+                <option value="2">2 - Low</option>
+                <option value="3">3 - Medium</option>
+                <option value="4">4 - High</option>
+                <option value="5">5 - Very High</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="overtime">Overtime</label>
+            <select id="overtime" required>
+                <option value="">Select option</option>
+                <option value="1">Yes</option>
+                <option value="0">No</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="age">Age</label>
+            <input type="number" id="age" min="18" max="70"
+                   placeholder="e.g. 25" required>
+        </div>
+
+        <button type="submit" id="predictButton">
+            Predict Attrition
+        </button>
+
+    </form>
+
+    <div id="result" class="result">
+        <h2 id="resultTitle"></h2>
+        <p id="resultMessage"></p>
+        <p id="probability" class="probability"></p>
+    </div>
+
+    <div class="footer">
+        MLP • Employee Attrition Prediction
+    </div>
+
+</div>
+
+
+<script>
+    const form = document.getElementById("predictionForm");
+    const button = document.getElementById("predictButton");
+    const result = document.getElementById("result");
+    const resultTitle = document.getElementById("resultTitle");
+    const resultMessage = document.getElementById("resultMessage");
+    const probability = document.getElementById("probability");
+
+    form.addEventListener("submit", async function(event) {
+
+        event.preventDefault();
+
+        const data = {
+            salary: Number(document.getElementById("salary").value),
+            experience: Number(document.getElementById("experience").value),
+            satisfaction: Number(document.getElementById("satisfaction").value),
+            overtime: Number(document.getElementById("overtime").value),
+            age: Number(document.getElementById("age").value)
+        };
+
+        button.disabled = true;
+        button.textContent = "Predicting...";
+
+        result.className = "result";
+        result.style.display = "none";
+
+        try {
+
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(data)
+            });
+
+            const output = await response.json();
+
+            if (!response.ok) {
+                throw new Error(output.error || "Prediction failed");
+            }
+
+            result.style.display = "block";
+
+            if (output.prediction === 1) {
+                result.className = "result leave";
+                resultTitle.textContent = "⚠️ Employee May LEAVE";
+            } else {
+                result.className = "result stay";
+                resultTitle.textContent = "✅ Employee May STAY";
+            }
+
+            resultMessage.textContent = output.message;
+
+            probability.textContent =
+                "Estimated Leave Probability: " +
+                output.probability + "%";
+
+        } catch (error) {
+
+            result.className = "result error";
+            result.style.display = "block";
+
+            resultTitle.textContent = "Error";
+            resultMessage.textContent = error.message;
+            probability.textContent = "";
+
+        } finally {
+
+            button.disabled = false;
+            button.textContent = "Predict Attrition";
+        }
+    });
+</script>
+
+</body>
+</html>
